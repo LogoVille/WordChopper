@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gioco Divisione in Sillabe</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1, h2 { text-align: center; }
+    button {
+      margin: 5px; padding: 10px 15px; cursor: pointer;
+      border: 2px solid #444; border-radius: 5px;
+      background: white; transition: background-color 0.3s, color 0.3s;
+    }
+    button.selected {
+      background-color: #27ae60;
+      color: white; border-color: #1e8449;
+    }
+    .tessere {
+      margin: 20px 0; display: flex; gap: 10px; justify-content: center;
+    }
+    .tessera {
+      cursor: pointer;
+      display: flex;
+      border: 2px solid #444;
+      border-radius: 5px;
+      user-select: none;
+    }
+    .quadrato {
+      width: 30px; height: 30px;
+      border-right: 1px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 18px;
+    }
+    .quadrato:last-child { border-right: none; }
+
+    .col1 { background: #f39c12; }
+    .col2 { background: #27ae60; }
+    .col3 { background: #2980b9; }
+    .col4 { background: #8e44ad; }
+
+    input.quadrato {
+      border: none;
+      outline: none;
+      width: 30px;
+      height: 30px;
+      text-align: center;
+      font-size: 18px;
+      text-transform: uppercase;
+      color: white;
+      font-weight: bold;
+    }
+
+    #spazioSillabe {
+      margin: 15px auto;
+      min-height: 40px;
+      border: 2px dashed #888;
+      width: fit-content;
+      padding: 10px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    #messaggio {
+      margin-top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    #selettoriCategorie {
+      text-align: center;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Gioco di Divisione in Sillabe</h1>
+<h2>Ascolta, dividi e scrivi la parola</h2>
+
+<div id="selettoriCategorie">
+  <button data-tipo="bisillabePiane">Bisillabe piane</button>
+  <button data-tipo="trisillabePiane">Trisillabe piane</button>
+  <button data-tipo="bisillabeGruppo">Bisillabe con gruppo</button>
+  <button data-tipo="trisillabeGruppo">Trisillabe con gruppo</button>
+  <button data-tipo="bisillabePonte">Bisillabe ponte</button>
+  <button data-tipo="trisillabePonte">Trisillabe ponte</button>
+  <button data-tipo="paroleDoppie">Parole con doppie</button>
+</div>
+
+<div style="text-align:center; margin-bottom: 20px;">
+  <button id="btnAvvia" disabled>Avvia</button>
+  <button id="btnPronuncia" disabled>Pronuncia Parola</button>
+</div>
+
+<div class="tessere" id="tessereDisponibili"></div>
+<div id="spazioSillabe"></div>
+
+<div style="text-align:center; margin-top: 10px;">
+  <button id="btnVerificaSillabe" disabled>Controlla Sillabe</button>
+  <button id="btnControlla" disabled>Controlla Parola</button>
+</div>
+
+<div id="messaggio"></div>
+
+<script>
+  const categorieParole = {
+    bisillabePiane: [
+      { parola: "casa", sillabe: ["ca", "sa"] },
+      { parola: "luna", sillabe: ["lu", "na"] },
+      { parola: "muro", sillabe: ["mu", "ro"] }
+    ],
+    trisillabePiane: [
+      { parola: "telefono", sillabe: ["te", "le", "fo", "no"] },
+      { parola: "matita", sillabe: ["ma", "ti", "ta"] },
+      { parola: "panino", sillabe: ["pa", "ni", "no"] }
+    ],
+    bisillabeGruppo: [
+      { parola: "bruno", sillabe: ["bru", "no"] },
+      { parola: "treno", sillabe: ["tre", "no"] },
+      { parola: "prato", sillabe: ["pra", "to"] }
+    ],
+    trisillabeGruppo: [
+      { parola: "strumento", sillabe: ["stru", "men", "to"] },
+      { parola: "problema", sillabe: ["pro", "ble", "ma"] },
+      { parola: "bicicletta", sillabe: ["bi", "ci", "cle", "tta"] }
+    ],
+    bisillabePonte: [
+      { parola: "alba", sillabe: ["al", "ba"] },
+      { parola: "ombra", sillabe: ["om", "bra"] },
+      { parola: "inno", sillabe: ["in", "no"] }
+    ],
+    trisillabePonte: [
+      { parola: "sempreverde", sillabe: ["sem", "pre", "ver", "de"] },
+      { parola: "andiamo", sillabe: ["an", "dia", "mo"] },
+      { parola: "ombrare", sillabe: ["om", "bra", "re"] }
+    ],
+    paroleDoppie: [
+  { parola: "palla", sillabe: ["pal", "la"] },
+  { parola: "mamma", sillabe: ["mam", "ma"] },
+  { parola: "notte", sillabe: ["not", "te"] },
+  { parola: "gomme", sillabe: ["gom", "me"] },
+  { parola: "bello", sillabe: ["bel", "lo"] },
+  { parola: "caffè", sillabe: ["caf", "fè"] },
+  { parola: "gatto", sillabe: ["gat", "to"] },
+  { parola: "pallaio", sillabe: ["pal", "la", "io"] },
+  { parola: "collo", sillabe: ["col", "lo"] },
+  { parola: "sasso", sillabe: ["sas", "so"] }
+    ],
+
+  };
+
+  const colori = ["col1", "col2", "col3", "col4"];
+  let paroleSelezionate = [];
+  let parolaCorrente = null;
+  let sillabeScelte = [];
+
+  const btnAvvia = document.getElementById("btnAvvia");
+  const btnPronuncia = document.getElementById("btnPronuncia");
+  const btnVerificaSillabe = document.getElementById("btnVerificaSillabe");
+  const btnControlla = document.getElementById("btnControlla");
+  const tessereDisponibili = document.getElementById("tessereDisponibili");
+  const spazioSillabe = document.getElementById("spazioSillabe");
+  const messaggio = document.getElementById("messaggio");
+
+  const selettori = document.querySelectorAll("#selettoriCategorie button");
+  selettori.forEach(btn => {
+    btn.addEventListener("click", () => {
+      btn.classList.toggle("selected");
+      aggiornaParoleSelezionate();
+    });
+  });
+
+  function aggiornaParoleSelezionate() {
+    paroleSelezionate = [];
+    selettori.forEach(btn => {
+      if (btn.classList.contains("selected")) {
+        const tipo = btn.dataset.tipo;
+        paroleSelezionate = paroleSelezionate.concat(categorieParole[tipo] || []);
+      }
+    });
+    btnAvvia.disabled = paroleSelezionate.length === 0;
+  }
+
+  btnAvvia.onclick = () => {
+    reset();
+    parolaCorrente = paroleSelezionate[Math.floor(Math.random() * paroleSelezionate.length)];
+    btnPronuncia.disabled = false;
+    mostraTessereDisponibili();
+  };
+
+  btnPronuncia.onclick = () => {
+    if (parolaCorrente) {
+      const u = new SpeechSynthesisUtterance(parolaCorrente.parola);
+      u.lang = "it-IT";
+      speechSynthesis.speak(u);
+    }
+  };
+
+  function mostraTessereDisponibili() {
+    tessereDisponibili.innerHTML = "";
+    for (let i = 1; i <= 4; i++) {
+      const tess = document.createElement("div");
+      tess.className = "tessera";
+      tess.dataset.lunghezza = i;
+      for (let q = 0; q < i; q++) {
+        const quad = document.createElement("div");
+        quad.className = `quadrato ${colori[i - 1]}`;
+        tess.appendChild(quad);
+      }
+      tess.onclick = () => selezionaTessera(i);
+      tessereDisponibili.appendChild(tess);
+    }
+  }
+
+  function selezionaTessera(lunghezza) {
+    const totaleCorrente = sillabeScelte.reduce((a, b) => a + b, 0);
+    if (totaleCorrente + lunghezza > parolaCorrente.parola.length) {
+      alert("Hai superato la lunghezza della parola!");
+      return;
+    }
+
+    sillabeScelte.push(lunghezza);
+    const tess = document.createElement("div");
+    tess.className = "tessera";
+    for (let i = 0; i < lunghezza; i++) {
+      const quad = document.createElement("div");
+      quad.className = `quadrato ${colori[lunghezza - 1]}`;
+      tess.appendChild(quad);
+    }
+    spazioSillabe.appendChild(tess);
+    btnVerificaSillabe.disabled = false;
+  }
+
+  btnVerificaSillabe.onclick = () => {
+    const sillabeCorrette = parolaCorrente.sillabe.map(s => s.length);
+    const corrispondono = sillabeScelte.length === sillabeCorrette.length &&
+                          sillabeScelte.every((val, idx) => val === sillabeCorrette[idx]);
+
+    if (!corrispondono) {
+      messaggio.textContent = "❌ Divisione in sillabe errata!";
+      return;
+    }
+
+    const tessere = spazioSillabe.querySelectorAll(".tessera");
+    tessere.forEach((tess, i) => {
+      const lunghezza = sillabeScelte[i];
+      tess.innerHTML = "";
+      for (let j = 0; j < lunghezza; j++) {
+        const input = document.createElement("input");
+        input.className = `quadrato ${colori[lunghezza - 1]}`;
+        input.maxLength = 1;
+        input.addEventListener("input", () => {
+          input.value = input.value.replace(/[^a-zA-Zàèéìòù]/gi, "").toUpperCase();
+          avanzaAlProssimoInput(input);
+        });
+        tess.appendChild(input);
+      }
+    });
+
+    btnVerificaSillabe.disabled = true;
+    btnControlla.disabled = false;
+
+    const allInputs = spazioSillabe.querySelectorAll("input");
+    if (allInputs.length > 0) allInputs[0].focus();
+
+    messaggio.textContent = "";
+  };
+
+  function avanzaAlProssimoInput(current) {
+    const inputs = Array.from(spazioSillabe.querySelectorAll("input"));
+    const idx = inputs.indexOf(current);
+    if (idx >= 0 && idx < inputs.length - 1) {
+      inputs[idx + 1].focus();
+    }
+  }
+
+  btnControlla.onclick = () => {
+    const lettere = [];
+    const inputs = spazioSillabe.querySelectorAll("input");
+    inputs.forEach(inp => lettere.push(inp.value.toLowerCase()));
+    const parolaUtente = lettere.join("");
+    const parolaGiusta = parolaCorrente.parola.toLowerCase();
+
+    if (parolaUtente === parolaGiusta) {
+      messaggio.textContent = "✅ CORRETTO!";
+      setTimeout(() => {
+        btnAvvia.click();
+      }, 2000);
+    } else {
+      messaggio.textContent = "❌ SBAGLIATO! La parola era: " + parolaCorrente.parola;
+    }
+  };
+
+  function reset() {
+    parolaCorrente = null;
+    sillabeScelte = [];
+    tessereDisponibili.innerHTML = "";
+    spazioSillabe.innerHTML = "";
+    messaggio.textContent = "";
+    btnControlla.disabled = true;
+    btnPronuncia.disabled = true;
+    btnVerificaSillabe.disabled = true;
+  }
+</script>
+
+</body>
+</html>
